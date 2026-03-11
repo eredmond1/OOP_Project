@@ -1,2 +1,0 @@
-#This is the link for the ArcGIS map
-https://arcg.is/155vT90
