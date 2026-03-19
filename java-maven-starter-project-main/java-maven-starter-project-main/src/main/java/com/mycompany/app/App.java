@@ -20,6 +20,7 @@ package com.mycompany.app;
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment;
 import com.esri.arcgisruntime.mapping.BasemapStyle;
 import com.esri.arcgisruntime.mapping.ArcGISMap;
+import com.esri.arcgisruntime.mapping.Viewpoint;
 import com.esri.arcgisruntime.mapping.view.MapView;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -39,7 +40,7 @@ public class App extends Application {
     public void start(Stage stage) {
 
         // set the title and size of the stage and show it
-        stage.setTitle("My Map App");
+        stage.setTitle("Edmonton Real Estate");
         stage.setWidth(800);
         stage.setHeight(700);
         stage.show();
@@ -64,6 +65,10 @@ public class App extends Application {
         ArcGISMap map = new ArcGISMap(BasemapStyle.ARCGIS_IMAGERY);
 
         // display the map by setting the map on the map view
+
+
+        //set map to center around Edmonton
+        map.setInitialViewpoint(new Viewpoint(53.5462,-113.4937, 100000));
         mapView.setMap(map);
     }
 
