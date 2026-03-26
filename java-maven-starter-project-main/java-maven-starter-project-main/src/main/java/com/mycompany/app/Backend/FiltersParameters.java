@@ -96,6 +96,8 @@ public class FiltersParameters {
         public Float maxAssessedValue = null;
         public String neighborhood = null;
 
+        public FiltersParameters() {}
+
         public FiltersParameters(String zoning, Integer minYearBuilt, Integer maxYearBuilt, Float minAssessedValue, Float maxAssessedValue,
                                  String neighborhood, Float minLotSize, Float maxLotSize, Float minTotalGrossArea, Float maxTotalGrossArea){
             this.zoning = zoning;
