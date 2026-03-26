@@ -2,6 +2,7 @@ package com.mycompany.app.Backend;
 
 public class FiltersParameters {
 
+        public FiltersParameters(){}
 
         public String zoning = null;
         public Integer minYearBuilt = null;
