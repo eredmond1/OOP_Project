@@ -125,8 +125,11 @@ public class AllProperty {
     }
 
     public Boolean filterSingle(Property property, FiltersParameters filtersParameters){
-        if(filtersParameters.getZoning() != null){
-            if (!property.housing.getZoning().equalsIgnoreCase(filtersParameters.getZoning())){
+        if (filtersParameters.getZoning() != null) {
+            String zoning = property.getHousing().getZoning();
+
+            if (zoning == null ||
+                    !zoning.equalsIgnoreCase(filtersParameters.getZoning())) {
                 return false;
             }
         }
@@ -155,9 +158,12 @@ public class AllProperty {
             }
         }
 
-        if( filtersParameters.getNeighborhood() != null){
-            String neighborhood = property.neighborhood.getNeighborhood();
-            return filtersParameters.getNeighborhood().equalsIgnoreCase(neighborhood);
+        if (filtersParameters.getNeighborhood() != null) {
+            String neighborhood = property.getNeighborhood().getNeighborhood();
+            if (neighborhood == null ||
+                    !filtersParameters.getNeighborhood().equalsIgnoreCase(neighborhood)) {
+                return false;
+            }
         }
 
         if(filtersParameters.minLotSize != null){

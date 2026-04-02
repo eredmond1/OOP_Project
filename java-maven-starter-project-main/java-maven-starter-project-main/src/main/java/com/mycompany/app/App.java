@@ -18,6 +18,7 @@
 package com.mycompany.app;
 
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment;
+import com.esri.arcgisruntime.concurrent.ListenableFuture;
 import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.geometry.SpatialReferences;
 import com.esri.arcgisruntime.mapping.BasemapStyle;
@@ -25,27 +26,47 @@ import com.esri.arcgisruntime.mapping.ArcGISMap;
 import com.esri.arcgisruntime.mapping.Viewpoint;
 import com.esri.arcgisruntime.mapping.view.Graphic;
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay;
+import com.esri.arcgisruntime.mapping.view.IdentifyGraphicsOverlayResult;
 import com.esri.arcgisruntime.mapping.view.MapView;
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol;
 import com.mycompany.app.Backend.*;
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 
 //Devin Addition
 import javafx.scene.layout.VBox;
 import java.io.IOException;
+import java.util.Map;
 
 public class App extends Application {
 
     private MapView mapView;
+
+    private Label results;
+
+    private Label ID;
+    private Label yearField;
+    private Label lotField;
+    private Label grossField;
+    private Label assessField;
+    private Label zoneField;
+    private Label addressField;
+    private Label neighborField;
+    private Map<Integer, Property> propertyMap = new HashMap<>();
 
     public static void main(String[] args) {
 
@@ -75,6 +96,54 @@ public class App extends Application {
 
         GraphicsOverlay graphicsOverlay = new GraphicsOverlay();
         mapView.getGraphicsOverlays().add(graphicsOverlay);
+
+        mapView.addViewpointChangedListener(event->{
+            double scale = mapView.getMapScale();
+            float size;
+            if(scale > 50000){
+                size = 3.5f;    //map is zoomed out
+            }
+            else if (scale > 5000){
+                size = 7.0f;    //medium amount of zoom
+            }
+            else{
+                size = 14.0f;   //map is zoomed in
+            }
+
+            for (Graphic g : graphicsOverlay.getGraphics()) {
+                SimpleMarkerSymbol symbol = (SimpleMarkerSymbol) g.getSymbol();
+                symbol.setSize(size);
+            }
+        });
+
+
+
+        mapView.setOnMouseClicked(event -> {
+            Point2D screenPoint = new Point2D(event.getX(), event.getY());
+
+            ListenableFuture<IdentifyGraphicsOverlayResult> future =
+                    mapView.identifyGraphicsOverlayAsync(graphicsOverlay, screenPoint, 20, false);
+
+            future.addDoneListener(() -> {
+                try {
+                    IdentifyGraphicsOverlayResult result = future.get();
+                    if (!result.getGraphics().isEmpty()) {
+                        Graphic clickedGraphic = result.getGraphics().get(0);
+
+                        // Look up the property by accountNumber
+                        Integer acctNum = (Integer) clickedGraphic.getAttributes().get("accountNumber");
+                        Property p = propertyMap.get(acctNum);
+
+                        if (p != null) {
+                            updateHouseCard(p);
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            });
+        });
+
 
         // backend call
         AllProperty allProperty = new AllProperty();
@@ -117,19 +186,52 @@ public class App extends Application {
 
         Button applyButton = new Button("Apply Filters");
 
+
+        results = new Label(null);
+
+
         VBox filterBox = new VBox(8,
                 minYearField, maxYearField,
                 minLotField, maxLotField,
                 minGrossField, maxGrossField,
                 minAssessedField, maxAssessedField,
                 zoningField, neighborhoodField,
-                applyButton
+                applyButton, results
         );
         filterBox.setPadding(new Insets(10));
         filterBox.setStyle("-fx-background-color: #f0f0f0; -fx-border-color: #ccc;");
-        filterBox.setPrefWidth(220);
+        filterBox.setPrefWidth(200);
 
         rootPane.setLeft(filterBox);
+
+        Label SelectTitleLabel = new Label("Selected Property");
+        SelectTitleLabel.setUnderline(true);
+        SelectTitleLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
+
+        ID = new Label("House ID: ");
+        yearField = new Label("Year Built: ");
+        lotField = new Label("Lot size: ");
+        grossField = new Label("Gross Area: ");
+        assessField = new Label("Assessed Value: ");
+        zoneField = new Label("Zoning: ");
+        addressField = new Label("Address: ");
+        addressField.setWrapText(true);
+        neighborField = new Label("Neighborhood: ");
+        neighborField.setWrapText(true);
+
+        VBox houseCard = new VBox(8,SelectTitleLabel,
+                ID,yearField,lotField,
+                grossField,assessField,
+                zoneField,addressField,neighborField);
+
+        houseCard.setPadding(new Insets(10));
+        houseCard.setStyle("-fx-background-color: #f0f0f0; -fx-border-color: #ccc;");
+        houseCard.setPrefWidth(200);
+
+        rootPane.setRight(houseCard);
+
+
+
 
 
         ArcGISMap map = new ArcGISMap(BasemapStyle.ARCGIS_IMAGERY);
@@ -151,13 +253,26 @@ public class App extends Application {
             params.setZoning(zoningField.getText().isEmpty() ? null : zoningField.getText());
             params.setNeighborhood(neighborhoodField.getText().isEmpty() ? null : neighborhoodField.getText());
 
+
+
             // Filter properties
             FilterResult result = allProperty.filterPropertys(params);
 
             List<Property> filteredList = new ArrayList<>();
             if (result.getResults() != null) {
                 filteredList.addAll(result.getResults().values());
+                if (filteredList.size() == 10000) {
+                    results.setText("First " + filteredList.size() + " results returned");
+                }
+                else results.setText(filteredList.size() + " results returned");
+
+            } else if (result.getResults() == null) {
+                results.setText("No results returned");
+
             }
+
+
+            //System.out.println("Filtered count: " + filteredList.size());
 
             // Clear previous graphics and display filtered properties
             displayProperties(filteredList, graphicsOverlay);
@@ -169,18 +284,70 @@ public class App extends Application {
 
     private void displayProperties(List<Property> properties, GraphicsOverlay overlay) {
         overlay.getGraphics().clear();
+        propertyMap.clear(); // reset for new filtered list
+
         for (Property p : properties) {
             Location loc = p.getLocation();
             if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) continue;
 
+            // Add to map for click lookup
+            propertyMap.put(p.getAccountNumber(), p);
+
+            // Create a point and graphic
             Point point = new Point(loc.getLongitude(), loc.getLatitude(), SpatialReferences.getWgs84());
-
-
-            SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, 0xFFFF0000, 4);
+            SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, 0xFFFF0000, 4); // bigger marker
             Graphic graphic = new Graphic(point, symbol);
 
+            // Store accountNumber for map lookup
+            graphic.getAttributes().put("accountNumber", p.getAccountNumber());
+
             overlay.getGraphics().add(graphic);
+
+
+            //System.out.println("Adding point: " + loc.getLatitude() + ", " + loc.getLongitude());
         }
+
+        //System.out.println("Total points displayed: " + overlay.getGraphics().size());
+    }
+
+    private void updateHouseCard(Property p) {
+
+        Housing h = p.getHousing();
+        Neighborhood n = p.getNeighborhood();
+        Address a = p.getAddress();
+
+
+
+        if (h != null) {
+            ID.setText("House ID: " + (p.getAccountNumber() != null ? p.getAccountNumber() : "N/A"));
+            yearField.setText("Year Built: " + (h.getYearBuild() != null ? h.getYearBuild() : "N/A"));
+            lotField.setText("Lot size: " + (h.getLotSize() != null ? h.getLotSize() : "N/A"));
+            grossField.setText("Gross Area: " + (h.getGrossTotalArea() != null ? h.getGrossTotalArea() : "N/A"));
+            assessField.setText("Assessed Value: " + (h.getAssessedValue() != null ? h.getAssessedValue() : "N/A"));
+            zoneField.setText("Zoning: " + (h.getZoning() != null ? h.getZoning() : "N/A"));
+        } else {
+            ID.setText("House ID: N/A");
+            yearField.setText("Year Built: N/A");
+            lotField.setText("Lot size: N/A");
+            grossField.setText("Gross Area: N/A");
+            assessField.setText("Assessed Value: N/A");
+            zoneField.setText("Zoning: N/A");
+        }
+
+        if (n != null) {
+            neighborField.setText("Neighborhood: " +
+                    (n.getNeighborhood() != null ? n.getNeighborhood() : "N/A"));
+        } else {
+            neighborField.setText("Neighborhood: N/A");
+        }
+
+        if (a != null) {
+            addressField.setText("Address: " + (a.getHouseNumber() +" " + a.getStreetName()));
+        } else {
+            addressField.setText("Address: N/A");
+        }
+
+
     }
 
     /**
