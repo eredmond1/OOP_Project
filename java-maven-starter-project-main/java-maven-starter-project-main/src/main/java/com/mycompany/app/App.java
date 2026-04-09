@@ -54,6 +54,9 @@ import java.util.Map;
 
 public class App extends Application {
 
+    //Presentation notes:
+    //Create all label field for righ side lookup box
+
     private MapView mapView;
 
     private Label results;
@@ -66,6 +69,10 @@ public class App extends Application {
     private Label zoneField;
     private Label addressField;
     private Label neighborField;
+
+    //Presentation notes:
+    //Design limitation: I had to turn this into a map using the acc't number cause the display kept breaking
+    //when I tried to add functionality to display house details on click
     private Map<Integer, Property> propertyMap = new HashMap<>();
 
     public static void main(String[] args) {
@@ -97,6 +104,8 @@ public class App extends Application {
         GraphicsOverlay graphicsOverlay = new GraphicsOverlay();
         mapView.getGraphicsOverlays().add(graphicsOverlay);
 
+        //Presentation notes:
+        //Inverted scaling to shrink dots as you zoom out, avoids turning the map into a giant red splotch
         mapView.addViewpointChangedListener(event->{
             double scale = mapView.getMapScale();
             float size;
@@ -116,7 +125,8 @@ public class App extends Application {
             }
         });
 
-
+        //Presentation notes:
+        //run when user clicks, get pixel coordinates within 20 pixel radius
 
         mapView.setOnMouseClicked(event -> {
             Point2D screenPoint = new Point2D(event.getX(), event.getY());
@@ -124,13 +134,14 @@ public class App extends Application {
             ListenableFuture<IdentifyGraphicsOverlayResult> future =
                     mapView.identifyGraphicsOverlayAsync(graphicsOverlay, screenPoint, 20, false);
 
+            //donelistetner only returns when done, stops ui from frrezing as it searches
             future.addDoneListener(() -> {
                 try {
                     IdentifyGraphicsOverlayResult result = future.get();
                     if (!result.getGraphics().isEmpty()) {
                         Graphic clickedGraphic = result.getGraphics().get(0);
 
-                        // Look up the property by accountNumber
+                        //look up the property by accountNumber in the mmap
                         Integer acctNum = (Integer) clickedGraphic.getAttributes().get("accountNumber");
                         Property p = propertyMap.get(acctNum);
 
@@ -145,7 +156,7 @@ public class App extends Application {
         });
 
 
-        // backend call
+        //backend call
         AllProperty allProperty = new AllProperty();
         try {
             allProperty.getData("Edmonton_Property_Merged_2025.csv");
@@ -186,7 +197,7 @@ public class App extends Application {
 
         Button applyButton = new Button("Apply Filters");
 
-
+        //no results on initial opening
         results = new Label(null);
 
 
@@ -258,6 +269,9 @@ public class App extends Application {
             // Filter properties
             FilterResult result = allProperty.filterPropertys(params);
 
+
+            //Presentation notes:
+            //turn the map into a list by extracting only values with getresults
             List<Property> filteredList = new ArrayList<>();
             if (result.getResults() != null) {
                 filteredList.addAll(result.getResults().values());
@@ -282,25 +296,36 @@ public class App extends Application {
     }
 
 
+    //Presentation notes:
+    //
+
     private void displayProperties(List<Property> properties, GraphicsOverlay overlay) {
         overlay.getGraphics().clear();
-        propertyMap.clear(); // reset for new filtered list
+        propertyMap.clear(); // reset for new filtered list (get rid of old data)
 
+
+        //Presentation notes:
+        //loop through properties, use a location object that skips if no coordinates are found
+        //to add an account number for displaying on the map
         for (Property p : properties) {
             Location loc = p.getLocation();
             if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) continue;
 
-            // Add to map for click lookup
+            //add to map for click lookup
             propertyMap.put(p.getAccountNumber(), p);
 
-            // Create a point and graphic
+            //create point and graphic
             Point point = new Point(loc.getLongitude(), loc.getLatitude(), SpatialReferences.getWgs84());
             SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, 0xFFFF0000, 4); // bigger marker
             Graphic graphic = new Graphic(point, symbol);
 
-            // Store accountNumber for map lookup
+            //store accountNumber for map lookup
+
+            //Presentation notes:
+            //again had to do this cause arcgis couldn't handle the data of so many full points
             graphic.getAttributes().put("accountNumber", p.getAccountNumber());
 
+            //finally display on map
             overlay.getGraphics().add(graphic);
 
 
@@ -310,6 +335,8 @@ public class App extends Application {
         //System.out.println("Total points displayed: " + overlay.getGraphics().size());
     }
 
+    //Presentation notes:
+    //extract data from housing, nbhd, address
     private void updateHouseCard(Property p) {
 
         Housing h = p.getHousing();
