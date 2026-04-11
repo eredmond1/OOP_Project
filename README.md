@@ -67,7 +67,3 @@ cd java-maven-starter-project-main
 - The project displays up to 10,000 properties at a time to avoid overloading the map.
 - The top-level `README.md` is the main project overview; the nested `java-maven-starter-project-main/README.md` contains more specific instructions for the Maven subproject.
 - Do not commit API keys to source control.
-
-## License
-
-This project is licensed under the Apache License 2.0. See `java-maven-starter-project-main/LICENSE` for details.
