@@ -31,11 +31,6 @@ A JavaFX desktop application that loads Edmonton property data from a CSV file a
 1. Open the project in your IDE.
 2. In `java-maven-starter-project-main/src/main/java/com/mycompany/app/App.java`, set your ArcGIS API key:
 
-   ```java
-   String yourApiKey = "YOUR_API_KEY_HERE";
-   ArcGISRuntimeEnvironment.setApiKey(yourApiKey);
-   ```
-
 3. Ensure the ArcGIS native assets are available locally in your home directory, typically under:
 
    ```text
