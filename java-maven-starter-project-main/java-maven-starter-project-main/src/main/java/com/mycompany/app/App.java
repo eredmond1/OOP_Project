@@ -52,6 +52,11 @@ import javafx.scene.layout.VBox;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * Main JavaFX application for displaying Edmonton property data on an ArcGIS map.
+ * The application loads property records, renders property markers, and provides
+ * filter controls and property detail interaction for users.
+ */
 public class App extends Application {
 
     //Presentation notes:
@@ -75,11 +80,22 @@ public class App extends Application {
     //when I tried to add functionality to display house details on click
     private Map<Integer, Property> propertyMap = new HashMap<>();
 
+    /**
+     * Application entry point that launches the JavaFX runtime.
+     *
+     * @param args command-line arguments passed to the application (unused)
+     */
     public static void main(String[] args) {
 
         Application.launch(args);
     }
 
+    /**
+     * Initializes the JavaFX application window, configures the ArcGIS map view,
+     * sets up the filter UI, and attaches interaction handlers for selecting properties.
+     *
+     * @param stage the primary stage for the application window
+     */
     @Override
     public void start(Stage stage) {
 
@@ -296,9 +312,13 @@ public class App extends Application {
     }
 
 
-    //Presentation notes:
-    //
-
+    /**
+     * Displays the provided property list on the map by converting each valid property
+     * location into a graphic marker. Existing markers are cleared before rendering new results.
+     *
+     * @param properties the filtered list of properties to show on the map
+     * @param overlay the graphics overlay used to render property markers
+     */
     private void displayProperties(List<Property> properties, GraphicsOverlay overlay) {
         overlay.getGraphics().clear();
         propertyMap.clear(); // reset for new filtered list (get rid of old data)
@@ -337,6 +357,12 @@ public class App extends Application {
 
     //Presentation notes:
     //extract data from housing, nbhd, address
+    /**
+     * Updates the right-side details card with the selected property's information.
+     * Displays housing, neighborhood, and address fields, using "N/A" for missing values.
+     *
+     * @param p the selected property whose details should be shown
+     */
     private void updateHouseCard(Property p) {
 
         Housing h = p.getHousing();

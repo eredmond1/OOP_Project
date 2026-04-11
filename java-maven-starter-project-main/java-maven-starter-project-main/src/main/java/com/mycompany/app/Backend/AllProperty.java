@@ -9,9 +9,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Loads and filters property records from a CSV dataset.
+ * This class parses CSV lines into Property objects, stores the loaded list,
+ * and applies filtering criteria to return matching properties.
+ */
 public class AllProperty {
     List<Property> propertyList;
 
+    /**
+     * Loads property data from the specified CSV file.
+     * Each record is parsed and converted into a Property object.
+     * The loaded list is stored internally and also returned.
+     *
+     * @param filename the path to the CSV file to read
+     * @return a list of Property objects loaded from the file
+     * @throws IOException if an I/O error occurs while reading the file
+     */
     public List<Property> getData (String filename) throws IOException {
         int lines = 0;
 //        checkFile(filename);
@@ -24,8 +38,6 @@ public class AllProperty {
         try {
             while ((record = buffRead.readLine()) != null) {
                 String[] data = parseCSVLine(record); // this is going to get the line records
-
-                //TODO: We should look at filtering out houses with no address
 
                 Property property = new Property(data); // make the object from the record
                 object_record.add(property);//add record to the List of property assisments
@@ -41,6 +53,13 @@ public class AllProperty {
     }
 
 
+    /**
+     * Parses a single CSV line into an array of values.
+     * Supports quoted fields and escaped quotes inside quoted fields.
+     *
+     * @param record the CSV line to parse
+     * @return an array of field values extracted from the record
+     */
     public static String[] parseCSVLine (String record){
         List<String> fields = new ArrayList<>();
         StringBuilder current = new StringBuilder();
@@ -87,14 +106,32 @@ public class AllProperty {
         return fields.toArray(new String[0]);
     }
 
+    /**
+     * Returns the currently loaded list of properties.
+     *
+     * @return the internal property list
+     */
     public List<Property> getPropertyList() {
         return propertyList;
     }
 
+    /**
+     * Sets the internal list of loaded properties.
+     *
+     * @param propertyList the property list to store
+     */
     public void setPropertyList(List<Property> propertyList) {
         this.propertyList = propertyList;
     }
 
+    /**
+     * Filters the loaded properties according to the provided filter criteria.
+     * Returns a FilterResult containing matching properties and a status.
+     * If more than 10,000 matches are found, only the first 10,000 are returned.
+     *
+     * @param filter the filter criteria to apply
+     * @return the filter result containing matched properties and status
+     */
     public FilterResult filterPropertys (FiltersParameters filter){
         Map<Integer, Property> dataMap = new HashMap<>();
         Integer count  = 0;
@@ -124,6 +161,15 @@ public class AllProperty {
 
     }
 
+    /**
+     * Determines whether a single property matches the provided filters.
+     * The method checks each active filter field and returns false as soon as any
+     * filter condition is not satisfied.
+     *
+     * @param property the property to evaluate
+     * @param filtersParameters the filter criteria to apply
+     * @return true if the property matches all active filters, false otherwise
+     */
     public Boolean filterSingle(Property property, FiltersParameters filtersParameters){
         if (filtersParameters.getZoning() != null) {
             String zoning = property.getHousing().getZoning();
