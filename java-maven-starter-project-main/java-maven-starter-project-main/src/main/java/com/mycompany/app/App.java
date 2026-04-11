@@ -43,7 +43,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
-import java.awt.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
